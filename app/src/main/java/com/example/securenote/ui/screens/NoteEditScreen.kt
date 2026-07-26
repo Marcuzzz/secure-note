@@ -1,12 +1,5 @@
 package com.example.securenote.ui.screens
 
-import android.content.ClipData
-import android.content.ClipDescription
-import android.content.ClipboardManager
-import android.content.Context
-import android.os.Build
-import android.os.PersistableBundle
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,6 +41,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.securenote.ui.vm.NoteEditViewModel
+import com.example.securenote.util.Clipboard
 import com.example.securenote.util.PasswordGenerator
 import com.example.securenote.util.PasswordOptions
 
@@ -57,12 +51,21 @@ fun NoteEditScreen(
     noteId: Long,
     onBack: () -> Unit,
     onOpenGenerator: () -> Unit,
+    initialPassword: String? = null,
     vm: NoteEditViewModel = viewModel(factory = NoteEditViewModel.factory(noteId)),
 ) {
     val state by vm.state.collectAsState()
     val ctx = LocalContext.current
     var showDelete by remember { mutableStateOf(false) }
     var showPassword by remember { mutableStateOf(false) }
+    var applied by remember { mutableStateOf(false) }
+
+    LaunchedEffect(initialPassword, state.loading) {
+        if (!applied && !initialPassword.isNullOrEmpty() && !state.loading && state.id == 0L) {
+            vm.update { copy(password = initialPassword) }
+            applied = true
+        }
+    }
 
     LaunchedEffect(state.saved, state.deleted) {
         if (state.saved || state.deleted) onBack()
@@ -120,7 +123,7 @@ fun NoteEditScreen(
                 modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
                     if (state.username.isNotEmpty()) {
-                        IconButton(onClick = { copyToClipboard(ctx, "username", state.username) }) {
+                        IconButton(onClick = { Clipboard.copyPlain(ctx, "username", state.username) }) {
                             Icon(Icons.Filled.ContentCopy, contentDescription = "Copy username")
                         }
                     }
@@ -148,7 +151,7 @@ fun NoteEditScreen(
                             Icon(Icons.Filled.Casino, contentDescription = "Generate")
                         }
                         if (state.password.isNotEmpty()) {
-                            IconButton(onClick = { copyToClipboard(ctx, "password", state.password, sensitive = true) }) {
+                            IconButton(onClick = { Clipboard.copyPassword(ctx, state.password) }) {
                                 Icon(Icons.Filled.ContentCopy, contentDescription = "Copy password")
                             }
                         }
@@ -181,17 +184,3 @@ fun NoteEditScreen(
     }
 }
 
-private fun copyToClipboard(ctx: Context, label: String, text: String, sensitive: Boolean = false) {
-    val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    val clip = ClipData.newPlainText(label, text)
-    if (sensitive && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        val extras = PersistableBundle().apply {
-            putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
-        }
-        clip.description.extras = extras
-    }
-    cm.setPrimaryClip(clip)
-    if (!(sensitive && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)) {
-        Toast.makeText(ctx, "Copied", Toast.LENGTH_SHORT).show()
-    }
-}

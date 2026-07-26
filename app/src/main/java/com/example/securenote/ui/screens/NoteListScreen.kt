@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -45,6 +46,7 @@ fun NoteListScreen(
     onOpen: (Long) -> Unit,
     onCreate: () -> Unit,
     onGenerator: () -> Unit,
+    onSettings: () -> Unit,
     onLock: () -> Unit,
     vm: NoteListViewModel = viewModel(factory = NoteListViewModel.Factory),
 ) {
@@ -58,6 +60,9 @@ fun NoteListScreen(
                 actions = {
                     IconButton(onClick = onGenerator) {
                         Icon(Icons.Filled.Casino, contentDescription = "Password generator")
+                    }
+                    IconButton(onClick = onSettings) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
                     IconButton(onClick = { vm.lock(); onLock() }) {
                         Icon(Icons.Filled.Lock, contentDescription = "Lock")

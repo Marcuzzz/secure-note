@@ -1,9 +1,5 @@
 package com.example.securenote.ui.screens
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -47,7 +44,10 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PasswordGeneratorScreen(onBack: () -> Unit) {
+fun PasswordGeneratorScreen(
+    onBack: () -> Unit,
+    onSaveAsNote: (String) -> Unit = {},
+) {
     var length by remember { mutableStateOf(20f) }
     var upper by remember { mutableStateOf(true) }
     var lower by remember { mutableStateOf(true) }
@@ -107,13 +107,23 @@ fun PasswordGeneratorScreen(onBack: () -> Unit) {
                         }
                         Button(
                             onClick = {
-                                if (password.isNotBlank()) copy(ctx, password)
+                                if (password.isNotBlank()) {
+                                    com.example.securenote.util.Clipboard.copyPassword(ctx, password)
+                                }
                             },
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(Icons.Filled.ContentCopy, contentDescription = null)
                             Text("  Copy")
                         }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = { if (password.isNotBlank()) onSaveAsNote(password) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Filled.NoteAdd, contentDescription = null)
+                        Text("  Save as new note")
                     }
                 }
             }
@@ -164,9 +174,3 @@ private fun StrengthMeter(bits: Double) {
     }
 }
 
-private fun copy(ctx: Context, text: String) {
-    val cm = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    val clip = ClipData.newPlainText("password", text)
-    cm.setPrimaryClip(clip)
-    Toast.makeText(ctx, "Copied", Toast.LENGTH_SHORT).show()
-}

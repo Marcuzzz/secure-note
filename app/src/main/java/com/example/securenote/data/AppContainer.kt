@@ -42,4 +42,7 @@ class VaultSession(private val appContext: Context) {
         val db = database ?: error("Vault is locked")
         return NoteRepository(db.noteDao())
     }
+
+    /** Returns a copy of the raw key. Caller must zero it after use. Null if locked. */
+    fun copyRawKey(): ByteArray? = key?.copyOf()
 }
