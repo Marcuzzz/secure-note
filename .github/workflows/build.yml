@@ -9,6 +9,12 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -58,7 +64,6 @@ jobs:
         run: |
           mkdir -p dist
           cp app/build/outputs/apk/debug/app-debug.apk dist/SecureNote-debug.apk
-          # Release APK may be signed with the real key or with debug signing (fallback).
           if [ -f app/build/outputs/apk/release/app-release.apk ]; then
             cp app/build/outputs/apk/release/app-release.apk dist/SecureNote-release.apk
           elif [ -f app/build/outputs/apk/release/app-release-unsigned.apk ]; then
@@ -80,6 +85,22 @@ jobs:
           path: dist/SecureNote-release.apk
           if-no-files-found: warn
 
+      - name: Assemble Pages site
+        run: |
+          mkdir -p _site
+          cp deploy/index.html _site/
+          if [ -f dist/SecureNote-release.apk ]; then
+            cp dist/SecureNote-release.apk _site/
+          fi
+          if [ -f dist/SecureNote-debug.apk ]; then
+            cp dist/SecureNote-debug.apk _site/
+          fi
+          ls -la _site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
@@ -89,3 +110,13 @@ jobs:
             dist/SecureNote-release.apk
           generate_release_notes: true
           fail_on_unmatched_files: false
+
+  deploy-pages:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
