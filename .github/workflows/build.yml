@@ -26,14 +26,12 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Grant execute permission to gradlew
-        run: chmod +x ./gradlew
-
       - name: Generate Gradle wrapper (if missing)
         run: |
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+          if [ ! -f gradlew ] || [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
             gradle wrapper --gradle-version 8.7 --distribution-type bin
           fi
+          chmod +x ./gradlew
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
